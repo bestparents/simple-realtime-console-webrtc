@@ -1,7 +1,6 @@
 import { useRef, useCallback, useState } from 'react';
 
-import { RealtimeEvent, useRealtimeClient } from '../utils/useRealtimeClient';
-import { useWaveRenderer } from '../utils/useWaveRenderer';
+import { RealtimeEvent, useRealtimeWebRTC } from '../utils/useRealtimeWebRTC';
 import { useUIScroller } from '../utils/useUIScroller';
 
 const instructions = `System settings:
@@ -32,6 +31,7 @@ export function ConsolePage() {
   }
 
   const startTimeRef = useRef<string>(new Date().toISOString());
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   const [realtimeEvents, setRealtimeEvents] = useState<RealtimeEvent[]>([]);
 
@@ -41,20 +41,13 @@ export function ConsolePage() {
   });
 
   const { eventsScrollRef } = useUIScroller(realtimeEvents);
-  const {
-    clientCanvasRef,
-    serverCanvasRef,
-    wavRecorderRef,
-    wavStreamPlayerRef,
-  } = useWaveRenderer();
 
-  const { client, isConnected, isMuted, setIsMuted, connectConversation, disconnectConversation } =
-    useRealtimeClient(
+  const { isConnected, isMuted, setIsMuted, connect: connectConversation, disconnect: disconnectConversation, sendEvent } =
+    useRealtimeWebRTC(
       apiKey,
       startTimeRef,
       setRealtimeEvents,
-      wavStreamPlayerRef,
-      wavRecorderRef,
+      audioRef,
       instructions + ' Memory: ' + JSON.stringify(memoryKv, null, 2),
       [
         {
@@ -111,6 +104,7 @@ export function ConsolePage() {
       window.location.reload();
     }
   }, []);
+
   return (
     <div className="flex flex-col h-screen">
       <div className="flex flex-none justify-between items-center p-4 border-b border-gray-200">
@@ -130,7 +124,12 @@ export function ConsolePage() {
             <span className="flex space-x-2">
               <button
                 className="flex items-center gap-2 font-['Roboto_Mono'] text-xs font-normal border-none rounded-[1000px] px-6 min-h-[42px] transition-all duration-100 outline-none disabled:text-[#999] enabled:cursor-pointer bg-[#101010] text-[#ececf1] hover:enabled:bg-[#404040]"
-                onClick={() => client.createResponse()}
+                onClick={() => sendEvent({
+                  type: "response.create",
+                  response: {
+                    modalities: ["text", "audio"]
+                  }
+                })}
               >
                 Force Reply
               </button>
@@ -162,23 +161,6 @@ export function ConsolePage() {
           <div className="overflow-auto flex-1 border-r border-gray-200">
             <div className="p-4">
               <div className="mb-4">
-                <canvas
-                  ref={clientCanvasRef}
-                  className="w-full h-12 bg-gray-50 rounded"
-                />
-              </div>
-              <div className="mb-4">
-                <canvas
-                  ref={serverCanvasRef}
-                  className="w-full h-12 bg-gray-50 rounded"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="overflow-auto w-full md:w-96">
-            <div className="p-4">
-              <div className="mb-4">
                 <h3 className="text-sm font-medium text-gray-700">Memory</h3>
                 <pre className="mt-2 text-xs text-wrap">
                   {JSON.stringify(memoryKv, null, 2)}
@@ -203,30 +185,48 @@ export function ConsolePage() {
                         <summary className="font-mono">
                           {formatTime(event.time) + ' '}
                           <span className="text-xs text-gray-600">
-                            {(event.event.event.transcript && (
-                              <p>{'"' + event.event.event.transcript + '"'}</p>
-                            )) ||
-                              (event.event.event.type ===
-                                'response.function_call_arguments.done' &&
-                                event.event.event.name +
-                                  '(' +
-                                  event.event.event.arguments +
-                                  ')') || (
-                                <span className="font-mono">
-                                  {event.event.event.type}
-                                </span>
-                              ) ||
-                              // console.log(event.event) ||
-                              JSON.stringify(event.event)}
+                            {event.event.type}
+                            {event.event.response?.output?.[0]?.content?.[0]?.text && (
+                              <p>"{event.event.response.output[0].content[0].text}"</p>
+                            )}
+                            {event.event.type === 'response.function_call_arguments.done' && (
+                              <span>
+                                {event.event.name}({JSON.stringify(event.event.arguments)})
+                              </span>
+                            )}
                           </span>
                         </summary>
-                        <pre className="overflow-auto mt-2 max-h-40 whitespace-pre-wrap">
+                        <pre className="mt-2 whitespace-pre-wrap">
                           {JSON.stringify(event.event, null, 2)}
                         </pre>
                       </details>
                     </div>
                   ))}
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="overflow-auto w-full md:w-96">
+            <div className="p-4">
+              <audio ref={audioRef} autoPlay />
+              <div className="flex space-x-4">
+                <button
+                  onClick={isConnected ? disconnectConversation : connectConversation}
+                  className={`px-4 py-2 rounded ${
+                    isConnected ? 'bg-red-500' : 'bg-green-500'
+                  } text-white`}
+                >
+                  {isConnected ? 'Disconnect' : 'Connect'}
+                </button>
+                <button
+                  onClick={() => setIsMuted(!isMuted)}
+                  className={`px-4 py-2 rounded ${
+                    isMuted ? 'bg-yellow-500' : 'bg-blue-500'
+                  } text-white`}
+                >
+                  {isMuted ? 'Unmute' : 'Mute'}
+                </button>
               </div>
             </div>
           </div>
