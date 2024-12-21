@@ -18,7 +18,7 @@ Key improvements from swyx's version:
 
 ## New Features
 
-- Migrated to WebRTC for improved audio streaming
+- Migrated to WebRTC for improved audio streaming (OpenAI WebRTC docs)[https://platform.openai.com/docs/guides/realtime-webrtc]
 - Secure backend for API key management
 - Ephemeral token generation for enhanced security
 
