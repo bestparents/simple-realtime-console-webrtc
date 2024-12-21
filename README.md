@@ -1,54 +1,78 @@
-# Simple Realtime Console
+# Simple Realtime Console - now with WebRTC
 
-https://github.com/openai/openai-realtime-console but its on ozempic. simplest possible frontend only VAD server implementation, because the original was way too bloated. Ripped out SCSS, added Tailwind. 
+> **Note:** This is a fork of [swyx's simple realtime console](https://github.com/swyxio/simple-realtime-console)
 
-You can [see the diffs here](https://github.com/openai/openai-realtime-console/compare/main...swyxio:simple-realtime-console:main?expand=1) - we are at -1200 LOC deleted now. - more now that we can use [the library versions of wavtools](https://x.com/keithwhor/status/1856496169805140307) and [3rd party realtime api sdk](https://github.com/transitive-bullshit/openai-realtime-api).
+> This project was originally created by [swyx](https://github.com/swyxio) as a WebSocket-based demo for OpenAI's Realtime API - a simplified version of the [official demo](https://github.com/openai/openai-realtime-console) but on ozempic 💉. It has since been migrated to use WebRTC for improved audio streaming capabilities.
 
-see diff
+The original project stripped out SCSS, added Tailwind, and achieved -1200 LOC while keeping all core functionality. You can [see the original diffs here](https://github.com/openai/openai-realtime-console/compare/main...swyxio:simple-realtime-console:main?expand=1).
 
-![image](https://github.com/user-attachments/assets/695e0dae-0a14-4128-98b3-faf1b121e23c)
+![Clean Console UI](https://github.com/user-attachments/assets/695e0dae-0a14-4128-98b3-faf1b121e23c)
 
+Key improvements from swyx's version:
+- Suppressed less useful event spam into the console
+- Made transcripts log nicely
+- Added memory injection that starts with initial context
+- Added mute button for better control
 
-i've also suppressed all the less useful event spam into the console and made the transcripts log nicely
+![Nice Logging](https://github.com/user-attachments/assets/5d259f29-dee7-4e10-98b8-850248450e21)
 
-![image](https://github.com/user-attachments/assets/5d259f29-dee7-4e10-98b8-850248450e21)
+## New Features
 
-i've also fixed the memory injection so it starts off with a little memory.
+- Migrated to WebRTC for improved audio streaming
+- Secure backend for API key management
+- Ephemeral token generation for enhanced security
 
-also added a mute button.
+## Setup
 
+1. Clone this repository
+2. Copy `.env.example` to `.env` and add your OpenAI API key
 
-# Starting the console
+### Backend Setup
 
-This is a React project created using `create-react-app` that is bundled via Webpack.
-Install it by extracting the contents of this package and using;
-
-```shell
-$ npm i
+```bash
+cd server
+npm install
+npm run dev
 ```
 
-Start your server with:
+The server will start on http://localhost:3001
 
-```shell
-$ npm start
+### Frontend Setup
+
+```bash
+npm install
+npm run dev
 ```
 
-It should be available via `localhost:3000`.
+The frontend will be available at http://localhost:3000
 
+## Using the Console
 
-# Using the console
+The console now uses a secure backend to handle API keys. You no longer need to enter your API key in the frontend - just add it to your `.env` file.
 
-The console requires an OpenAI API key (**user key** or **project key**) that has access to the
-Realtime API. You'll be prompted on startup to enter it. It will be saved via `localStorage` and can be
-changed at any time from the UI.
+To start a session:
+1. Click **Connect** (this will request microphone access)
+2. Start speaking! The console uses Voice Activity Detection (VAD)
+3. You can interrupt the model at any time
+4. Use the Mute button to control your microphone
 
-To start a session you'll need to **connect**. This will require microphone access.
-We only have **vad** (Voice Activity Detection) conversation mode here.
+### Memory System
 
-There is only one function enabled;
+There's one function enabled:
+- `set_memory`: Ask the model to remember information, stored in a JSON blob on the left
+- We've added some basic initial memory to get you started
 
-- `set_memory`: You can ask the model to remember information for you, and it will store it in
-  a JSON blob on the left. **We've added some basic initial memory for the user to mess with.**
+## Architecture
 
-You can freely interrupt the model at any time.
+- Frontend: React + TypeScript + Vite
+- Backend: Express + TypeScript
+- Communication: WebRTC for real-time audio streaming
+- Security: Backend-generated ephemeral tokens for API access
 
+## Contributing
+
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+
+## License
+
+MIT
