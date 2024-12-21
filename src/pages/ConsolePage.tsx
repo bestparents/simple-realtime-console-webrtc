@@ -22,14 +22,6 @@ Personality:
 `;
 
 export function ConsolePage() {
-  const apiKey =
-    localStorage.getItem('tmp::voice_api_key') ||
-    prompt('OpenAI API Key') ||
-    '';
-  if (apiKey !== '') {
-    localStorage.setItem('tmp::voice_api_key', apiKey);
-  }
-
   const startTimeRef = useRef<string>(new Date().toISOString());
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -44,7 +36,6 @@ export function ConsolePage() {
 
   const { isConnected, isMuted, setIsMuted, connect: connectConversation, disconnect: disconnectConversation, sendEvent } =
     useRealtimeWebRTC(
-      apiKey,
       startTimeRef,
       setRealtimeEvents,
       audioRef,
@@ -96,22 +87,12 @@ export function ConsolePage() {
     return `${pad(m)}:${pad(s)}.${pad(hs)}`;
   }, []);
 
-  const resetAPIKey = useCallback(() => {
-    const apiKey = prompt('OpenAI API Key');
-    if (apiKey !== null) {
-      localStorage.clear();
-      localStorage.setItem('tmp::voice_api_key', apiKey);
-      window.location.reload();
-    }
-  }, []);
-
   return (
     <div className="flex flex-col h-screen">
       <div className="flex flex-none justify-between items-center p-4 border-b border-gray-200">
         <div className="flex items-center space-x-4">
           <button
             onClick={isConnected ? disconnectConversation : connectConversation}
-            disabled={!apiKey}
             className={`flex items-center gap-2 font-['Roboto_Mono'] text-xs font-normal border-none rounded-[1000px] px-6 min-h-[42px] transition-all duration-100 outline-none disabled:text-[#999] enabled:cursor-pointer px-4 py-2 rounded-md ${
               isConnected
                 ? 'bg-red-500 hover:bg-red-600 text-white'
@@ -145,14 +126,6 @@ export function ConsolePage() {
               </button>
             </span>
           )}
-        </div>
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={resetAPIKey}
-            className="text-xs text-gray-500 hover:text-gray-700"
-          >
-            Reset key: {apiKey.slice(0, 4)}...{apiKey.slice(-4)}
-          </button>
         </div>
       </div>
 
