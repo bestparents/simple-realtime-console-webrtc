@@ -1,7 +1,7 @@
-import { useRef, useCallback, useState } from 'react';
-
-import { RealtimeEvent, useRealtimeWebRTC } from '../utils/useRealtimeWebRTC';
+import { useRef, useState } from 'react';
+import { useRealtimeWebRTC, RealtimeEvent } from '../utils/useRealtimeWebRTC';
 import { useUIScroller } from '../utils/useUIScroller';
+import { useWebRTCWaveRenderer } from '../utils/useWebRTCWaveRenderer';
 
 const instructions = `System settings:
 Tool use: enabled.
@@ -26,13 +26,13 @@ export function ConsolePage() {
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const [realtimeEvents, setRealtimeEvents] = useState<RealtimeEvent[]>([]);
-
   const [memoryKv, setMemoryKv] = useState<{ [key: string]: any }>({
     userName: 'swyx',
     todaysDate: new Date().toISOString().split('T')[0],
   });
 
   const { eventsScrollRef } = useUIScroller(realtimeEvents);
+  const { localCanvasRef, remoteCanvasRef, connectLocalStream, connectRemoteStream } = useWebRTCWaveRenderer();
 
   const { isConnected, isMuted, setIsMuted, connect: connectConversation, disconnect: disconnectConversation, sendEvent } =
     useRealtimeWebRTC(
@@ -66,10 +66,12 @@ export function ConsolePage() {
             setMemoryKv((prev) => ({ ...prev, [key]: value }));
           },
         },
-      ]
+      ],
+      connectLocalStream,
+      connectRemoteStream
     );
 
-  const formatTime = useCallback((timestamp: string) => {
+  const formatTime = (timestamp: string) => {
     const startTime = startTimeRef.current;
     const t0 = new Date(startTime).valueOf();
     const t1 = new Date(timestamp).valueOf();
@@ -85,7 +87,7 @@ export function ConsolePage() {
       return s;
     };
     return `${pad(m)}:${pad(s)}.${pad(hs)}`;
-  }, []);
+  };
 
   return (
     <div className="flex flex-col h-screen">
@@ -133,6 +135,19 @@ export function ConsolePage() {
         <div className="flex flex-col h-full md:flex-row">
           <div className="overflow-auto flex-1 border-r border-gray-200">
             <div className="p-4">
+              <audio ref={audioRef} autoPlay className="hidden" />
+              <div className="mb-4">
+                <canvas
+                  ref={localCanvasRef}
+                  className="w-full h-12 bg-gray-50 rounded"
+                />
+              </div>
+              <div className="mb-4">
+                <canvas
+                  ref={remoteCanvasRef}
+                  className="w-full h-12 bg-gray-50 rounded"
+                />
+              </div>
               <div className="mb-4">
                 <h3 className="text-sm font-medium text-gray-700">Memory</h3>
                 <pre className="mt-2 text-xs text-wrap">
@@ -176,30 +191,6 @@ export function ConsolePage() {
                     </div>
                   ))}
                 </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="overflow-auto w-full md:w-96">
-            <div className="p-4">
-              <audio ref={audioRef} autoPlay />
-              <div className="flex space-x-4">
-                <button
-                  onClick={isConnected ? disconnectConversation : connectConversation}
-                  className={`px-4 py-2 rounded ${
-                    isConnected ? 'bg-red-500' : 'bg-green-500'
-                  } text-white`}
-                >
-                  {isConnected ? 'Disconnect' : 'Connect'}
-                </button>
-                <button
-                  onClick={() => setIsMuted(!isMuted)}
-                  className={`px-4 py-2 rounded ${
-                    isMuted ? 'bg-yellow-500' : 'bg-blue-500'
-                  } text-white`}
-                >
-                  {isMuted ? 'Unmute' : 'Mute'}
-                </button>
               </div>
             </div>
           </div>

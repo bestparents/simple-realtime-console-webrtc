@@ -20,7 +20,9 @@ export function useRealtimeWebRTC(
   tools?: Array<{ 
     schema: any; 
     fn: ToolHandler;
-  }>
+  }>,
+  onLocalStream?: (stream: MediaStream) => void,
+  onRemoteStream?: (stream: MediaStream) => void
 ) {
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const dataChannelRef = useRef<RTCDataChannel | null>(null);
@@ -51,6 +53,8 @@ export function useRealtimeWebRTC(
       pc.ontrack = (e) => {
         if (audioRef.current) {
           audioRef.current.srcObject = e.streams[0];
+          // Pass remote stream to wave renderer
+          onRemoteStream?.(e.streams[0]);
         }
       };
 
@@ -74,6 +78,8 @@ export function useRealtimeWebRTC(
         stream.getTracks().forEach(track => {
           pc.addTrack(track, stream);
         });
+        // Pass local stream to wave renderer
+        onLocalStream?.(stream);
       } catch (err) {
         console.error("Error accessing microphone:", err);
       }
@@ -123,7 +129,7 @@ export function useRealtimeWebRTC(
       console.error("Connection error:", error);
       disconnect();
     }
-  }, [initialInstructions, tools]);
+  }, [initialInstructions, tools, onLocalStream, onRemoteStream]);
 
   const disconnect = useCallback(async () => {
     if (dataChannelRef.current) {
